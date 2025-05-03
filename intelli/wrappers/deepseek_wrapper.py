@@ -60,14 +60,22 @@ class DeepSeekWrapper:
 
     def decode(self, token_ids: List[int]) -> str:
         inv_vocab = {v: k for k, v in self.vocab.items()}
-        toks = [inv_vocab.get(i, "") for i in token_ids]
-        latin1_str = "".join(toks)
+        toks = []
         print(f"Tokens: {toks}")
-        print(f"Latin Tokens: {latin1_str}")
 
-        raw_bytes = latin1_str.encode("latin1", errors="ignore")
-        text = raw_bytes.decode("utf-8", errors="replace").replace("Ġ", " ")
-        return text.strip()
+        for i in token_ids:
+            t = inv_vocab.get(i, "")
+            if not t or t == "<unk>":
+                continue
+            toks.append(t)
+
+        byte_seq = "".join(toks).encode("latin1", errors="ignore")
+        try:
+            text = byte_seq.decode("utf-8", errors="replace")
+        except Exception:
+            text = byte_seq.decode("utf-8", errors="ignore")
+
+        return text.replace("Ġ", " ").strip()
 
     def _build_model(self):
         """Constructs a transformer-based model based on the config"""
