@@ -78,9 +78,8 @@ class TestDeepSeekWrapper(unittest.TestCase):
             config_path=None,
             quantized=self.quantized,
         )
-        text = "hello world!"
-        # prompt = "This is a long generation test."
-
+        # text = "hello world!"
+        text = "This is a long generation test."
         ids = model.tokenize(text)
         # round-trip should recover original (spaces from Ġ)
         decoded = model.decode(ids)
