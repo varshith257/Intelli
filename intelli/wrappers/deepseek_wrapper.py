@@ -79,7 +79,10 @@ class DeepSeekWrapper:
                 if t.startswith("Ġ"):
                     result += " " + t[1:]
                 else:
-                    result += t
+                    if t == "Ä":
+                        result += " "
+                    else:
+                        result += t
         return result.strip()
 
     def _build_model(self):
