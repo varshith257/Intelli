@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import torch
 from safetensors.torch import safe_open, load_file
 from huggingface_hub.utils import HfHubHTTPError, EntryNotFoundError
@@ -64,20 +65,47 @@ def load_bpe_tokenizer(repo_id: str, cache_dir: str = "~/.cache/deepseek"):
     with open(tok_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     vocab = data["model"]["vocab"]
-    merges = [tuple(pair.split()) for pair in data["model"]["merges"]]
-    return vocab, merges
+    merges = data["model"]["merges"]
+    merge_ranks = {tuple(merge.split()): idx for idx, merge in enumerate(merges)}
+    return vocab, merge_ranks
 
 
-def bpe_tokenize(text: str, vocab: dict, merges: list):
-    text = text.replace(" ", "Ġ")
-    tokens = list(text)
-    for a, b in merges:
+def bpe_tokenize(text: str, vocab: dict, merge_ranks: dict):
+    def byte_encode(text):
+        return [chr(b) for b in text.encode("utf-8")]
+
+    def get_pairs(tokens):
+        return {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)}
+
+    tokens = byte_encode(text.replace(" ", "Ġ"))
+    tokens = [t for t in tokens if t]
+
+    while True:
+        pairs = get_pairs(tokens)
+        if not pairs:
+            break
+
+        best = None
+        min_rank = float("inf")
+        for pair in pairs:
+            rank = merge_ranks.get(pair)
+            if rank is not None and rank < min_rank:
+                best = pair
+                min_rank = rank
+
+        if best is None:
+            break
+
+        new_tokens = []
         i = 0
-        while i < len(tokens) - 1:
-            if tokens[i] == a and tokens[i + 1] == b:
-                tokens[i : i + 2] = [a + b]
+        while i < len(tokens):
+            if i < len(tokens) - 1 and (tokens[i], tokens[i + 1]) == best:
+                new_tokens.append(tokens[i] + tokens[i + 1])
+                i += 2
             else:
+                new_tokens.append(tokens[i])
                 i += 1
+        tokens = new_tokens
 
     return [vocab.get(t, vocab.get("<unk>", 0)) for t in tokens]
 

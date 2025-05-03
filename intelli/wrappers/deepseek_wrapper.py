@@ -49,24 +49,6 @@ class DeepSeekWrapper:
         except HfHubHTTPError as e:
             raise RuntimeError(f"Could not list files in {repo_id}") from e
 
-        # if "model.safetensors.index.json" in files:
-        #     # sharded safetensors
-        #     index_path = download_model_index(repo_id)
-        #     load_safetensors_weights(self.model, index_path, repo_id=repo_id)
-        # elif "model.safetensors" in files:
-        #     # single-file safetensors
-        #     single = download_model(repo_id, "model.safetensors")
-        #     load_safetensors_weights(self.model, single, repo_id=None)
-        # elif "pytorch_model.bin" in files:
-        #     model_path = download_model(repo_id, "pytorch_model.bin")
-        #     print(f"Loading PyTorch .bin model: {model_path}")
-        #     state_dict = torch.load(model_path, map_location=self.device)
-        #     self.model.load_state_dict(state_dict, strict=False)
-        #     print("Loaded PyTorch .bin model successfully.")
-        # else:
-        #     raise FileNotFoundError(
-        #         f"No `model.safetensors.index.json`, `model.safetensors`, or `pytorch_model.bin` in {repo_id}"
-        #     )
         load_model_weights(self.model, repo_id, files)
 
     def tokenize(self, text):
@@ -77,12 +59,17 @@ class DeepSeekWrapper:
         return bpe_tokenize(text, self.vocab, self.merges)
 
     def decode(self, token_ids: List[int]) -> str:
-        inv = {v: k for k, v in self.vocab.items()}
-        tokens = [inv.get(i, "<unk>") for i in token_ids]
+        inv_vocab = {v: k for k, v in self.vocab.items()}
+        tokens = [inv_vocab.get(i, "") for i in token_ids]
         print(f"Tokens: {tokens}")
-        text = "".join(tokens)
-        print(f"Decoded: {text}")
-        return text.replace("Ġ", " ").strip()
+        byte_sequence = (
+            "".join(tokens).replace("Ġ", " ").encode("latin1", errors="replace")
+        )
+        print(f"Decoded: {byte_sequence}")
+        try:
+            return byte_sequence.decode("utf-8", errors="replace").strip()
+        except UnicodeDecodeError:
+            return byte_sequence.decode("utf-8", errors="ignore").strip()
 
     def generate(self, prompt_ids: List[int], max_new_tokens: int = 20) -> List[int]:
         input_ids = torch.tensor([prompt_ids], device=self.device)
