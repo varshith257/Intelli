@@ -77,7 +77,7 @@ def bpe_tokenize(text: str, vocab: dict, merge_ranks: dict):
     def get_pairs(tokens):
         return {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)}
 
-    tokens = byte_encode(text.replace(" ", "Ġ"))
+    tokens = byte_encode(text)
     tokens = [t for t in tokens if t]
 
     while True:

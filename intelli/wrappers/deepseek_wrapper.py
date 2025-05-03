@@ -72,7 +72,7 @@ class DeepSeekWrapper:
                 byte_arr.extend(t.encode("utf-8"))
             except Exception:
                 continue
-        return byte_arr.decode("utf-8", errors="replace").replace("Ġ", " ").strip()
+        return byte_arr.decode("utf-8", errors="replace").strip()
 
     def _build_model(self):
         """Constructs a transformer-based model based on the config"""
