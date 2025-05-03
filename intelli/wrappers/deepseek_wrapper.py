@@ -66,6 +66,8 @@ class DeepSeekWrapper:
         byte_arr = bytearray()
         print(f"Decoded: {byte_arr}")
         for t in token_strs:
+            if not t:
+                continue
             if t == "<unk>":
                 continue
             try:

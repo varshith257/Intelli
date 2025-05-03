@@ -72,7 +72,7 @@ def load_bpe_tokenizer(repo_id: str, cache_dir: str = "~/.cache/deepseek"):
 
 def bpe_tokenize(text: str, vocab: dict, merge_ranks: dict):
     def byte_encode(text):
-        return [bytes([b]).decode("latin1") for b in text.encode("utf-8")]
+        return [chr(b) for b in text.encode("utf-8")]
 
     def get_pairs(tokens):
         return {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)}
