@@ -3,6 +3,7 @@ import torch
 import os
 from intelli.wrappers.deepseek_wrapper import DeepSeekWrapper
 
+
 class TestDeepSeekWrapper(unittest.TestCase):
 
     def setUp(self):
@@ -71,6 +72,33 @@ class TestDeepSeekWrapper(unittest.TestCase):
         self.assertEqual(output.shape[2], model.config["vocab_size"])
         print("Inference successful on text input, output shape:", output.shape)
 
+    def test_encode_decode_roundtrip(self):
+        m = DeepSeekWrapper(
+            repo_id="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+            model_filename="model.safetensors.index.json",
+            quantized=True,
+        )
+        text = "hello world!"
+        ids = m.tokenize(text)
+        # round-trip should recover original (spaces from Ġ)
+        decoded = m.decode(ids)
+        print("Round-trip decoded  :", decoded)
+        self.assertEqual(decoded, text)
+
+    def test_greedy_generate(self):
+        m = DeepSeekWrapper(
+            repo_id="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+            model_filename="model.safetensors.index.json",
+            quantized=True,
+        )
+        prompt = "Hello"
+        ids = m.tokenize(prompt)
+        gen_ids = m.generate(ids, max_new_tokens=5)
+        gen_text = m.decode(gen_ids)
+        print("Generated text    :", gen_text)
+        self.assertIsInstance(gen_text, str)
+        self.assertIsInstance(gen_text, str)
+        self.assertTrue(gen_text.startswith(prompt))
 
 if __name__ == "__main__":
     unittest.main()

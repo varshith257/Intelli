@@ -1,8 +1,9 @@
 import json
-from safetensors.torch import safe_open
 import os
 from huggingface_hub import hf_hub_download
 import torch
+from huggingface_hub.utils import EntryNotFoundError
+from safetensors.torch import safe_open, load_file
 
 
 def get_device():
@@ -83,25 +84,32 @@ def load_safetensors_weights(
     model, model_path: str, repo_id: str = None, cache_dir: str = "~/.cache/deepseek"
 ):
     """Loads model weights from split safetensors using the index file"""
-    if not repo_id:
-        raise ValueError("repo_id is required to load weights using index file")
+    if model_path.endswith(".index.json"):
+        if repo_id is None:
+            raise ValueError("repo_id is required to load weights using index file")
 
-    index_path = download_model_index(repo_id, cache_dir)
-    with open(index_path, "r") as f:
-        index_data = json.load(f)
+        index_path = download_model_index(repo_id, cache_dir)
+        with open(index_path, "r") as f:
+            index_data = json.load(f)
 
-    shard_files = set(index_data["weight_map"].values())
+        shard_files = set(index_data["weight_map"].values())
+        shard_paths = [
+            download_model(repo_id, shard, cache_dir) for shard in shard_files
+        ]
 
-    shard_paths = [download_model(repo_id, shard, cache_dir) for shard in shard_files]
+        state_dict = {}
+        for shard_path in shard_paths:
+            with safe_open(shard_path, framework="pt", device=get_device()) as f:
+                for key in f.keys():
+                    state_dict[key] = f.get_tensor(key)
 
-    state_dict = {}
-    for shard_path in shard_paths:
-        with safe_open(shard_path, framework="pt", device=get_device()) as f:
-            for key in f.keys():
-                state_dict[key] = f.get_tensor(key)
+            model.load_state_dict(state_dict, strict=False)
+        print("Model weights loaded successfully from split safetensors.")
 
-    model.load_state_dict(state_dict, strict=False)
-    print("Model weights loaded successfully from split safetensors.")
+    else:
+        weights = load_file(model_path)
+        model.load_state_dict(weights, strict=False)
+        print("Loaded single safetensors file.")
 
 
 def quantize_model(model, dtype=torch.float16):
