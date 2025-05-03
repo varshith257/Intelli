@@ -8,7 +8,7 @@ class TestDeepSeekWrapper(unittest.TestCase):
 
     def setUp(self):
         # using a small distill model for CI speed
-        self.repo_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+        self.repo_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
         self.model_filename = "model.safetensors.index.json"
         self.quantized = True
 
