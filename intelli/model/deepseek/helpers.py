@@ -69,6 +69,7 @@ def load_bpe_tokenizer(repo_id: str, cache_dir: str = "~/.cache/deepseek"):
 
 
 def bpe_tokenize(text: str, vocab: dict, merges: list):
+    text = text.replace(" ", "Ġ")
     tokens = [chr(b) for b in text.encode("utf-8")]
     for a, b in merges:
         i = 0

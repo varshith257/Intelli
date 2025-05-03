@@ -9,13 +9,11 @@ class TestDeepSeekWrapper(unittest.TestCase):
     def setUp(self):
         # using a small distill model for CI speed
         self.repo_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
-        self.model_filename = "model.safetensors.index.json"
         self.quantized = True
 
     def test_load_and_infer(self):
         model = DeepSeekWrapper(
             repo_id=self.repo_id,
-            model_filename=self.model_filename,
             config_path=None,
             quantized=self.quantized,
         )
@@ -29,7 +27,6 @@ class TestDeepSeekWrapper(unittest.TestCase):
     def test_bpe_tokenization(self):
         model = DeepSeekWrapper(
             repo_id=self.repo_id,
-            model_filename=self.model_filename,
             config_path=None,
             quantized=self.quantized,
         )
@@ -48,9 +45,9 @@ class TestDeepSeekWrapper(unittest.TestCase):
         self.assertEqual(y.shape[1], len(token_ids))
 
     def test_tokenize_and_infer_from_text(self):
+
         model = DeepSeekWrapper(
             repo_id=self.repo_id,
-            model_filename=self.model_filename,
             config_path=None,
             quantized=self.quantized,
         )
@@ -73,32 +70,33 @@ class TestDeepSeekWrapper(unittest.TestCase):
         print("Inference successful on text input, output shape:", output.shape)
 
     def test_encode_decode_roundtrip(self):
-        m = DeepSeekWrapper(
-            repo_id="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
-            model_filename="model.safetensors.index.json",
-            quantized=True,
+        model = DeepSeekWrapper(
+            repo_id=self.repo_id,
+            config_path=None,
+            quantized=self.quantized,
         )
         text = "hello world!"
-        ids = m.tokenize(text)
+        ids = model.tokenize(text)
         # round-trip should recover original (spaces from Ġ)
-        decoded = m.decode(ids)
+        decoded = model.decode(ids)
         print("Round-trip decoded  :", decoded)
         self.assertEqual(decoded, text)
 
     def test_greedy_generate(self):
-        m = DeepSeekWrapper(
-            repo_id="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
-            model_filename="model.safetensors.index.json",
-            quantized=True,
+        model = DeepSeekWrapper(
+            repo_id=self.repo_id,
+            config_path=None,
+            quantized=self.quantized,
         )
         prompt = "Hello"
-        ids = m.tokenize(prompt)
-        gen_ids = m.generate(ids, max_new_tokens=5)
-        gen_text = m.decode(gen_ids)
+        ids = model.tokenize(prompt)
+        gen_ids = model.generate(ids, max_new_tokens=5)
+        gen_text = model.decode(gen_ids)
         print("Generated text    :", gen_text)
         self.assertIsInstance(gen_text, str)
         self.assertIsInstance(gen_text, str)
         self.assertTrue(gen_text.startswith(prompt))
+
 
 if __name__ == "__main__":
     unittest.main()

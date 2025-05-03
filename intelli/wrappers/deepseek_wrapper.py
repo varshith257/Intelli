@@ -12,14 +12,14 @@ from intelli.model.deepseek.helpers import (
     load_bpe_tokenizer,
     bpe_tokenize,
 )
-from huggingface_hub.utils import HfHubHTTPError
+from huggingface_hub.utils import HfHubHTTPError, EntryNotFoundError
+from huggingface_hub import HfApi, hf_hub_download
 
 
 class DeepSeekWrapper:
     def __init__(
         self,
         repo_id: str,
-        model_filename: str,
         config_path: str = None,
         quantized: bool = False,
     ):
@@ -43,23 +43,24 @@ class DeepSeekWrapper:
         self.model = self._build_model()
         self.model.to(self.device, memory_format=torch.channels_last)
 
+        api = HfApi()
         try:
-            self.model_path = download_model_index(repo_id)
-            use_index = True
-        except HfHubHTTPError:
-            self.model_path = download_model(repo_id, model_filename)
-            use_index = False
+            files = api.list_repo_files(repo_id)
+        except HfHubHTTPError as e:
+            raise RuntimeError(f"Could not list files in {repo_id}") from e
 
-        load_safetensors_weights(
-            self.model,
-            self.model_path,
-            repo_id=self.repo_id if use_index else None,
-        )
-
-    def _load_config(self):
-        """Loads model configuration from JSON file."""
-        with open(self.config_path, "r") as f:
-            return json.load(f)
+        if "model.safetensors.index.json" in files:
+            # sharded safetensors
+            index_path = download_model_index(repo_id)
+            load_safetensors_weights(self.model, index_path, repo_id=repo_id)
+        elif "model.safetensors" in files:
+            # single-file safetensors
+            single = download_model(repo_id, "model.safetensors")
+            load_safetensors_weights(self.model, single, repo_id=None)
+        else:
+            raise FileNotFoundError(
+                f"No `model.safetensors.index.json` or `model.safetensors` in {repo_id}"
+            )
 
     def tokenize(self, text):
         """
