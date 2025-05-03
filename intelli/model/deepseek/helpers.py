@@ -61,7 +61,8 @@ def load_bpe_tokenizer(repo_id: str, cache_dir: str = "~/.cache/deepseek"):
         tok_path = hf_hub_download(
             repo_id=repo_id, filename="tokenizer.json", cache_dir=cache_dir
         )
-    data = json.load(open(tok_path, "r", encoding="utf-8"))
+    with open(tok_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
     vocab = data["model"]["vocab"]
     merges = [tuple(pair.split()) for pair in data["model"]["merges"]]
     return vocab, merges

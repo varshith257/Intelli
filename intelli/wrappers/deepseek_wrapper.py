@@ -14,6 +14,7 @@ from intelli.model.deepseek.helpers import (
 )
 from huggingface_hub.utils import HfHubHTTPError
 
+
 class DeepSeekWrapper:
     def __init__(
         self,
@@ -31,26 +32,29 @@ class DeepSeekWrapper:
         """
         self.repo_id = repo_id
         self.device = get_device()
+        self.quantized = quantized
+
         self.config_path = config_path or download_config(repo_id)
-        self.config = self._load_config()
-        self.vocab, self.merges = load_bpe_tokenizer(self.repo_id)
+        with open(self.config_path, "r") as f:
+            self.config = json.load(f)
+
+        self.vocab, self.merges = load_bpe_tokenizer(repo_id)
+
         self.model = self._build_model()
+        self.model.to(self.device, memory_format=torch.channels_last)
 
         try:
             self.model_path = download_model_index(repo_id)
-            self._use_index = True
+            use_index = True
         except HfHubHTTPError:
             self.model_path = download_model(repo_id, model_filename)
-            self._use_index = False
+            use_index = False
 
-        if self._use_index:
-            load_safetensors_weights(self.model, self.model_path, repo_id=repo_id)
-        else:
-            load_safetensors_weights(self.model, self.model_path, repo_id=None)
-        self.quantized = quantized
-
-        load_safetensors_weights(self.model, self.model_path, repo_id=self.repo_id)
-        self.model.to(self.device, memory_format=torch.channels_last)
+        load_safetensors_weights(
+            self.model,
+            self.model_path,
+            repo_id=self.repo_id if use_index else None,
+        )
 
     def _load_config(self):
         """Loads model configuration from JSON file."""
