@@ -71,33 +71,27 @@ def load_bpe_tokenizer(repo_id: str, cache_dir: str = "~/.cache/deepseek"):
 
 
 def bpe_tokenize(text: str, vocab: dict, merge_ranks: dict):
-    def byte_encode(text):
-        return [chr(b) for b in text.encode("utf-8")]
+    text = text.replace(" ", "Ġ")
+    tokens = [chr(b) for b in text.encode("utf-8")]
 
     def get_pairs(tokens):
         return {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)}
-
-    tokens = byte_encode(text)
-    tokens = [t for t in tokens if t]
 
     while True:
         pairs = get_pairs(tokens)
         if not pairs:
             break
 
-        best = None
-        min_rank = float("inf")
-        for pair in pairs:
-            rank = merge_ranks.get(pair)
-            if rank is not None and rank < min_rank:
-                best = pair
-                min_rank = rank
+        best, best_rank = None, float("inf")
+        for p in pairs:
+            r = merge_ranks.get(p)
+            if r is not None and r < best_rank:
+                best, best_rank = p, r
 
         if best is None:
             break
 
-        new_tokens = []
-        i = 0
+        new_tokens, i = [], 0
         while i < len(tokens):
             if i < len(tokens) - 1 and (tokens[i], tokens[i + 1]) == best:
                 new_tokens.append(tokens[i] + tokens[i + 1])

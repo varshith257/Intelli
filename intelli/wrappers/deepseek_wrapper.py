@@ -63,18 +63,14 @@ class DeepSeekWrapper:
         token_strs = [inv_vocab.get(i, "") for i in token_ids]
         print(f"Tokens: {token_strs}")
 
-        byte_arr = bytearray()
-        print(f"Decoded: {byte_arr}")
+        b = bytearray()
+        print(f"Decoded: {b}")
         for t in token_strs:
-            if not t:
+            if not t or t == "<unk>":
                 continue
-            if t == "<unk>":
-                continue
-            try:
-                byte_arr.extend(t.encode("utf-8"))
-            except Exception:
-                continue
-        return byte_arr.decode("utf-8", errors="replace").strip()
+            b.extend(t.encode("utf-8"))
+        s = b.decode("utf-8", errors="replace")
+        return s.replace("Ġ", " ").strip()
 
     def _build_model(self):
         """Constructs a transformer-based model based on the config"""
