@@ -78,8 +78,11 @@ class DeepSeekWrapper:
 
     def decode(self, token_ids: List[int]) -> str:
         inv = {v: k for k, v in self.vocab.items()}
-        text = "".join(inv.get(i, "") for i in token_ids)
-        return text.replace("Ġ", " ")
+        tokens = [inv.get(i, "<unk>") for i in token_ids]
+        print(f"Tokens: {tokens}")
+        text = "".join(tokens)
+        print(f"Decoded: {text}")
+        return text.replace("Ġ", " ").strip()
 
     def generate(self, prompt_ids: List[int], max_new_tokens: int = 20) -> List[int]:
         input_ids = torch.tensor([prompt_ids], device=self.device)
