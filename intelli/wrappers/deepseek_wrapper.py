@@ -69,13 +69,15 @@ class DeepSeekWrapper:
                 continue
             toks.append(t)
 
-        byte_seq = "".join(toks).encode("latin1", errors="ignore")
+        byte_str = "".join(toks)
+        byte_str = byte_str.replace("Ġ", " ")
         try:
+            byte_seq = byte_str.encode("latin1", errors="ignore")
             text = byte_seq.decode("utf-8", errors="replace")
         except Exception:
-            text = byte_seq.decode("utf-8", errors="ignore")
+            text = byte_str
 
-        return text.replace("Ġ", " ").strip()
+        return text.strip()
 
     def _build_model(self):
         """Constructs a transformer-based model based on the config"""
