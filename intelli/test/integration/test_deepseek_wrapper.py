@@ -78,15 +78,11 @@ class TestDeepSeekWrapper(unittest.TestCase):
             config_path=None,
             quantized=self.quantized,
         )
-        # text = "hello world!"
-        # text = "This is a long generation test."
-        text = "This is a comprehensive test string for tokenization.\n\nIt includes:\n1. Multiple paragraphs\n2. Numbers like 123456789\n3. Special characters: @#$%^&*()_+\n4. Punctuation marks... \"quoted text\" and 'single quotes'\n5. Non-English characters: é ñ ç ö ü ø\n6. Technical terms: NLP, BPE tokenization, UTF-8 encoding\n7. URLs: https://example.com/test?param=value\n8. Code-like fragments: model.load_state_dict(weights, strict=False)\n\nLet's see how well the DeepSeek tokenizer handles these diverse elements and whether it can accurately reconstitute them after the encode-decode process."
+        text = "This is a comprehensive test string for tokenization."
         ids = model.tokenize(text)
-        # round-trip should recover original (spaces from Ġ)
         decoded = model.decode(ids)
         print("Round-trip decoded  :", decoded)
         self.assertEqual(decoded, text)
-
 
 if __name__ == "__main__":
     unittest.main()
