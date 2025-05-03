@@ -60,24 +60,16 @@ class DeepSeekWrapper:
 
     def decode(self, token_ids: List[int]) -> str:
         inv_vocab = {v: k for k, v in self.vocab.items()}
-        tokens = [inv_vocab.get(i, "") for i in token_ids]
-        print(f"Tokens: {tokens}")
-        byte_sequence = (
-            "".join(tokens).replace("Ġ", " ").encode("latin1", errors="replace")
-        )
-        print(f"Decoded: {byte_sequence}")
-        try:
-            return byte_sequence.decode("utf-8", errors="replace").strip()
-        except UnicodeDecodeError:
-            return byte_sequence.decode("utf-8", errors="ignore").strip()
-
-    def generate(self, prompt_ids: List[int], max_new_tokens: int = 20) -> List[int]:
-        input_ids = torch.tensor([prompt_ids], device=self.device)
-        for _ in range(max_new_tokens):
-            logits = self.infer(input_ids)
-            next_id = logits[0, -1].argmax().unsqueeze(0).unsqueeze(0)
-            input_ids = torch.cat([input_ids, next_id], dim=1)
-        return input_ids[0].tolist()
+        token_strs = [inv_vocab.get(i, "") for i in token_ids]
+        print(f"Tokens: {token_strs}")
+        byte_arr = bytearray()
+        print(f"Decoded: {byte_arr}")
+        for t in token_strs:
+            try:
+                byte_arr.extend(t.encode("utf-8"))
+            except Exception:
+                byte_arr.extend(b"<unk>")
+        return byte_arr.decode("utf-8", errors="replace").replace("Ġ", " ").strip()
 
     def _build_model(self):
         """Constructs a transformer-based model based on the config"""

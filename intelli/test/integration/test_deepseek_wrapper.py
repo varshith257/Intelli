@@ -79,40 +79,13 @@ class TestDeepSeekWrapper(unittest.TestCase):
             quantized=self.quantized,
         )
         text = "hello world!"
+        # prompt = "This is a long generation test."
+
         ids = model.tokenize(text)
         # round-trip should recover original (spaces from Ġ)
         decoded = model.decode(ids)
         print("Round-trip decoded  :", decoded)
         self.assertEqual(decoded, text)
-
-    def test_greedy_generate(self):
-        model = DeepSeekWrapper(
-            repo_id=self.repo_id,
-            config_path=None,
-            quantized=self.quantized,
-        )
-        prompt = "Hello"
-        ids = model.tokenize(prompt)
-        gen_ids = model.generate(ids, max_new_tokens=5)
-        gen_text = model.decode(gen_ids)
-        print("Generated text    :", gen_text)
-        self.assertIsInstance(gen_text, str)
-        self.assertTrue(gen_text.startswith(prompt))
-
-    def test_long_generation(self):
-        model = DeepSeekWrapper(
-            repo_id=self.repo_id,
-            config_path=None,
-            quantized=False,
-        )
-
-        prompt = "This is a long generation test."
-        ids = model.tokenize(prompt)
-        gen_ids = model.generate(ids, max_new_tokens=30)
-        gen_text = model.decode(gen_ids)
-        print("Long generated text:", gen_text)
-        self.assertTrue(prompt in gen_text)
-        self.assertGreater(len(gen_text), len(prompt) + 10)
 
 
 if __name__ == "__main__":
