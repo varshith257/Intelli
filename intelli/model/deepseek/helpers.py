@@ -1,9 +1,9 @@
 import json
 import os
-from huggingface_hub import hf_hub_download
 import torch
-from huggingface_hub.utils import EntryNotFoundError
 from safetensors.torch import safe_open, load_file
+from huggingface_hub.utils import HfHubHTTPError, EntryNotFoundError
+from huggingface_hub import HfApi, hf_hub_download
 
 
 def get_device():
@@ -112,6 +112,42 @@ def load_safetensors_weights(
         weights = load_file(model_path)
         model.load_state_dict(weights, strict=False)
         print("Loaded single safetensors file.")
+
+
+def load_model_weights(
+    model, repo_id: str = None, files: list = None, cache_dir: str = "~/.cache/deepseek"
+):
+    """
+    Loads model weights into the provided model using any supported format:
+    - Split safetensors (index)
+    - Single safetensors file
+    - PyTorch .bin file
+    """
+    if files is None:
+        api = HfApi()
+        try:
+            files = api.list_repo_files(repo_id)
+        except Exception as e:
+            raise RuntimeError(f"Could not list files for {repo_id}") from e
+
+    if "model.safetensors.index.json" in files:
+        index_path = download_model_index(repo_id, cache_dir)
+        load_safetensors_weights(model, index_path, repo_id=repo_id)
+        print("Loaded model from split safetensors.")
+    elif "model.safetensors" in files:
+        model_path = download_model(repo_id, "model.safetensors", cache_dir)
+        load_safetensors_weights(model, model_path, repo_id=None)
+        print("Loaded model from single safetensors file.")
+    elif "pytorch_model.bin" in files:
+        model_path = download_model(repo_id, "pytorch_model.bin", cache_dir)
+        print(f"Loading PyTorch .bin model: {model_path}")
+        state_dict = torch.load(model_path, map_location=get_device())
+        model.load_state_dict(state_dict, strict=False)
+        print("Loaded model from PyTorch .bin file.")
+    else:
+        raise FileNotFoundError(
+            f"None of the supported model formats found in repo {repo_id}."
+        )
 
 
 def quantize_model(model, dtype=torch.float16):

@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from typing import List
 from intelli.model.deepseek.helpers import (
-    load_safetensors_weights,
+    load_model_weights,
     download_model,
     get_device,
     download_config,
@@ -49,18 +49,25 @@ class DeepSeekWrapper:
         except HfHubHTTPError as e:
             raise RuntimeError(f"Could not list files in {repo_id}") from e
 
-        if "model.safetensors.index.json" in files:
-            # sharded safetensors
-            index_path = download_model_index(repo_id)
-            load_safetensors_weights(self.model, index_path, repo_id=repo_id)
-        elif "model.safetensors" in files:
-            # single-file safetensors
-            single = download_model(repo_id, "model.safetensors")
-            load_safetensors_weights(self.model, single, repo_id=None)
-        else:
-            raise FileNotFoundError(
-                f"No `model.safetensors.index.json` or `model.safetensors` in {repo_id}"
-            )
+        # if "model.safetensors.index.json" in files:
+        #     # sharded safetensors
+        #     index_path = download_model_index(repo_id)
+        #     load_safetensors_weights(self.model, index_path, repo_id=repo_id)
+        # elif "model.safetensors" in files:
+        #     # single-file safetensors
+        #     single = download_model(repo_id, "model.safetensors")
+        #     load_safetensors_weights(self.model, single, repo_id=None)
+        # elif "pytorch_model.bin" in files:
+        #     model_path = download_model(repo_id, "pytorch_model.bin")
+        #     print(f"Loading PyTorch .bin model: {model_path}")
+        #     state_dict = torch.load(model_path, map_location=self.device)
+        #     self.model.load_state_dict(state_dict, strict=False)
+        #     print("Loaded PyTorch .bin model successfully.")
+        # else:
+        #     raise FileNotFoundError(
+        #         f"No `model.safetensors.index.json`, `model.safetensors`, or `pytorch_model.bin` in {repo_id}"
+        #     )
+        load_model_weights(self.model, repo_id, files)
 
     def tokenize(self, text):
         """

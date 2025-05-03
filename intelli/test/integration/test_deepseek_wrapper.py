@@ -8,7 +8,9 @@ class TestDeepSeekWrapper(unittest.TestCase):
 
     def setUp(self):
         # using a small distill model for CI speed
-        self.repo_id = "deepseek-ai/DeepSeek-Coder-1.3B-base"
+        self.repo_id = os.getenv(
+            "DEEPSEEK_MODEL", "deepseek-ai/DeepSeek-Coder-1.3B-base"
+        )
         self.quantized = True
         print(f"\n--- Running test: {self._testMethodName} ---")
 
@@ -95,23 +97,22 @@ class TestDeepSeekWrapper(unittest.TestCase):
         gen_text = model.decode(gen_ids)
         print("Generated text    :", gen_text)
         self.assertIsInstance(gen_text, str)
-        self.assertIsInstance(gen_text, str)
         self.assertTrue(gen_text.startswith(prompt))
 
+    def test_long_generation(self):
+        model = DeepSeekWrapper(
+            repo_id=self.repo_id,
+            config_path=None,
+            quantized=False,
+        )
 
-def test_long_generation(self):
-    model = DeepSeekWrapper(
-        repo_id=self.repo_id,
-        config_path=None,
-        quantized=False,
-    )
-    prompt = "This is a long generation test."
-    ids = model.tokenize(prompt)
-    gen_ids = model.generate(ids, max_new_tokens=30)
-    gen_text = model.decode(gen_ids)
-    print("Long generated text:", gen_text)
-    self.assertTrue(prompt in gen_text)
-    self.assertGreater(len(gen_text), len(prompt) + 10)
+        prompt = "This is a long generation test."
+        ids = model.tokenize(prompt)
+        gen_ids = model.generate(ids, max_new_tokens=30)
+        gen_text = model.decode(gen_ids)
+        print("Long generated text:", gen_text)
+        self.assertTrue(prompt in gen_text)
+        self.assertGreater(len(gen_text), len(prompt) + 10)
 
 
 if __name__ == "__main__":
