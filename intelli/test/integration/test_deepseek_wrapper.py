@@ -9,7 +9,7 @@ class TestDeepSeekWrapper(unittest.TestCase):
     def setUp(self):
         # using a small distill model for CI speed
         self.repo_id = os.getenv(
-            "DEEPSEEK_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+            "DEEPSEEK_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
         )
         self.quantized = True
         print(f"\n--- Running test: {self._testMethodName} ---")
