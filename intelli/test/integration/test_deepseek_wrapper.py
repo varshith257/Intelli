@@ -9,7 +9,7 @@ class TestDeepSeekWrapper(unittest.TestCase):
     def setUp(self):
         # using a small distill model for CI speed
         self.repo_id = os.getenv(
-            "DEEPSEEK_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+            "DEEPSEEK_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
         )
         self.quantized = True
         print(f"\n--- Running test: {self._testMethodName} ---")
@@ -62,7 +62,6 @@ class TestDeepSeekWrapper(unittest.TestCase):
         token_ids = model.tokenize(text)
         self.assertIsInstance(token_ids, list)
         self.assertGreater(len(token_ids), 0)
-        print("Token IDs:", token_ids)
 
         input_tensor = torch.tensor([token_ids], dtype=torch.long)
         output = model.infer(input_tensor)
@@ -78,7 +77,7 @@ class TestDeepSeekWrapper(unittest.TestCase):
             config_path=None,
             quantized=self.quantized,
         )
-        text = "This is a comprehensive test string for tokenization."
+        text ="Can DeepSeek decode what it just encoded?",
         ids = model.tokenize(text)
         decoded = model.decode(ids)
         print("Round-trip decoded  :", decoded)
