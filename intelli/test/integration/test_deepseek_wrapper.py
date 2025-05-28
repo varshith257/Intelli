@@ -78,7 +78,7 @@ class TestDeepSeekWrapper(unittest.TestCase):
             config_path=None,
             quantized=self.quantized,
         )
-        text = "This is a comprehensive test string for tokenization."
+        text = "Can DeepSeek decode what it just encoded?"
         ids = model.tokenize(text)
         decoded = model.decode(ids)
         print("Round-trip decoded  :", decoded)
